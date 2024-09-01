@@ -22,32 +22,29 @@
 #    include "quantum.h"
 #    include "snowe.h"
 
+#    include <stdio.h> // for keylog?
+
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-    if (is_keyboard_master()) {
-        return OLED_ROTATION_270;
+    if (!is_keyboard_master()) {
+        return OLED_ROTATION_270; // flips the display 180 degrees if offhand
     }
-    #ifdef BONGO_ENABLE
-        return OLED_ROTATION_180;
-    #endif /* ifdef BONGO_ENABLE */
-    #ifdef ARASAKA_ENABLE
-        return OLED_ROTATION_270;
-    #endif /* ifdef ARASAKA_ENABLE */
-    #ifdef OCEAN_DREAM_ENABLE
-        return OLED_ROTATION_270;
-    #endif /* ifdef ARASAKA_ENABLE */
-    return OLED_ROTATION_0;
+    return OLED_ROTATION_270;
 }
+
+#    define L_BASE 0
+#    define L_LOWER 2
+#    define L_RAISE 4
 
 void oled_render_layer_state(void) {
     oled_write_P(PSTR("Layer"), false);
     switch (get_highest_layer(layer_state)) {
-        case _BASE:
-            oled_write_ln_P(PSTR("Main"), false);
+        case L_BASE:
+            oled_write_raw_P(qwerty_img, sizeof(qwerty_img));
             break;
-        case _LOWER:
+        case L_LOWER:
             oled_write_ln_P(PSTR("Low"), false);
             break;
-        case _UPPER:
+        case L_RAISE:
             oled_write_ln_P(PSTR("Up"), false);
             break;
     }
@@ -55,13 +52,7 @@ void oled_render_layer_state(void) {
 
 char keylog_str[24] = {};
 
-const char code_to_name[60] = {
-    ' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
-    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-    'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-    'R', 'E', 'B', 'T', '_', '-', '=', '[', ']', '\\',
-    '#', ';', '\'', '`', ',', '.', '/', ' ', ' ', ' '};
+const char code_to_name[60] = {' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'R', 'E', 'B', 'T', '_', '-', '=', '[', ']', '\\', '#', ';', '\'', '`', ',', '.', '/', ' ', ' ', ' '};
 
 void set_keylog(uint16_t keycode, keyrecord_t *record) {
     char name = ' ';
@@ -76,9 +67,9 @@ void set_keylog(uint16_t keycode, keyrecord_t *record) {
     snprintf(keylog_str, sizeof(keylog_str), "%dx%d, k%2d : %c", record->event.key.row, record->event.key.col, keycode, name);
 }
 
-void oled_render_keylog(void) { oled_write(keylog_str, false); }
-
-#ifndef ARASAKA_ENABLE
+void oled_render_keylog(void) {
+    oled_write(keylog_str, false);
+}
 
 void render_bootmagic_status(void) {
     /* Show Ctrl-Gui Swap options */
@@ -86,6 +77,7 @@ void render_bootmagic_status(void) {
         {{0x97, 0x98, 0}, {0xb7, 0xb8, 0}},
         {{0x95, 0x96, 0}, {0xb5, 0xb6, 0}},
     };
+    oled_write_P(PSTR("BTMGK"), false);
     oled_write_P(PSTR(""), false);
     if (!keymap_config.swap_lctl_lgui) {
         oled_write_P(logo[1][0], false);
@@ -96,27 +88,19 @@ void render_bootmagic_status(void) {
         oled_write_P(PSTR("   "), false);
         oled_write_P(logo[0][1], false);
     }
-#    ifndef BONGO_ENABLE
-    oled_write_P(PSTR("   "), false);
+    oled_write_P(PSTR("   NKRO "), keymap_config.nkro);
     oled_write_P(PSTR("WPM: "), false);
 
     char wpm[6];
     itoa(get_current_wpm(), wpm, 10);
     oled_write_ln(wpm, false);
-#    endif
 }
-#endif /* ifndef ARASAKA_ENABLE */
 
 bool oled_task_user(void) {
     if (is_keyboard_master()) {
-#    ifdef ARASAKA_ENABLE
-        arasaka_draw();
-#    endif
-#    ifndef ARASAKA_ENABLE
         oled_render_layer_state();
         oled_render_keylog();
         render_bootmagic_status();
-#    endif
 
 #    ifdef LUNA_ENABLE
         led_usb_state = host_keyboard_led_state();
@@ -130,7 +114,7 @@ bool oled_task_user(void) {
         arasaka_draw();
 #    endif
 #    ifdef BONGO_ENABLE
-        draw_bongo(false);
+        bongo_draw();
 #    endif
     }
     return false;
