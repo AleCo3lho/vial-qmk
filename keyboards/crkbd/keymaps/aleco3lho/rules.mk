@@ -1,7 +1,6 @@
-VIA_ENABLE          = yes
-VIAL_ENABLE         = yes
+VIA_ENABLE          = no
+VIAL_ENABLE         = no
 LTO_ENABLE          = yes
-
 BOOTMAGIC_ENABLE	= no       # Enable Bootmagic Lite
 MOUSEKEY_ENABLE		= no        # Mouse keys(+4700)
 EXTRAKEY_ENABLE		= no       # Audio control and System control(+450)
@@ -27,10 +26,9 @@ KEY_OVERRIDE_ENABLE = no
 SPLIT_KEYBOARD		= yes
 QMK_SETTINGS        = no
 
-OCEAN_DREAM_ENABLE	= yes
-LUNA_ENABLE			= yes
-ARASAKA_ENABLE		= no
+OCEAN_DREAM_ENABLE	= no
+LUNA_ENABLE			= no
+ARASAKA_ENABLE		= yes
 BONGO_ENABLE		= no
 
-
-WPM_ENABLE			= yes
+WPM_ENABLE			= no
